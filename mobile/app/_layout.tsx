@@ -1,0 +1,72 @@
+import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import 'react-native-reanimated';
+
+import { runMigrations } from '@/src/db';
+import { useTenantStore } from '@/src/stores/tenantStore';
+import { useThemeStore } from '@/src/stores/themeStore';
+import { useTheme } from '@/src/theme/useTheme';
+
+export { ErrorBoundary } from 'expo-router';
+
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Splash may already be hidden in some test environments.
+});
+
+export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+  const bootstrapTenant = useTenantStore((s) => s.bootstrap);
+  const hydrateTheme = useThemeStore((s) => s.hydrate);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        await runMigrations();
+        await Promise.all([hydrateTheme(), bootstrapTenant()]);
+      } catch (err) {
+        console.warn('Startup error', err);
+      }
+      if (!cancelled) {
+        setReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bootstrapTenant, hydrateTheme]);
+
+  useEffect(() => {
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => {
+        // Best-effort.
+      });
+    }
+  }, [ready]);
+
+  if (!ready) {
+    return null;
+  }
+
+  return <RootLayoutNav />;
+}
+
+function RootLayoutNav() {
+  const theme = useTheme();
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.bg }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </GestureHandlerRootView>
+  );
+}
