@@ -13,7 +13,7 @@ class ResolveTenantTest extends TestCase
 
     public function test_missing_header_returns_400_with_error_json(): void
     {
-        $response = $this->getJson('/api/v1/ping');
+        $response = $this->getJson('/api/v1/tenant/me');
 
         $response->assertStatus(400)
             ->assertExactJson(['error' => 'missing X-Tenant-UUID header']);
@@ -21,7 +21,7 @@ class ResolveTenantTest extends TestCase
 
     public function test_invalid_uuid_header_returns_400(): void
     {
-        $response = $this->getJson('/api/v1/ping', ['X-Tenant-UUID' => 'not-a-uuid']);
+        $response = $this->getJson('/api/v1/tenant/me', ['X-Tenant-UUID' => 'not-a-uuid']);
 
         $response->assertStatus(400)
             ->assertExactJson(['error' => 'missing X-Tenant-UUID header']);
@@ -33,10 +33,10 @@ class ResolveTenantTest extends TestCase
 
         $this->assertDatabaseCount('tenants', 0);
 
-        $response = $this->getJson('/api/v1/ping', ['X-Tenant-UUID' => $uuid]);
+        $response = $this->getJson('/api/v1/tenant/me', ['X-Tenant-UUID' => $uuid]);
 
         $response->assertStatus(200)
-            ->assertExactJson(['ok' => true]);
+            ->assertJsonPath('uuid', $uuid);
 
         $this->assertDatabaseHas('tenants', ['uuid' => $uuid]);
         $this->assertSame(1, Tenant::count());
@@ -47,10 +47,10 @@ class ResolveTenantTest extends TestCase
         $tenant = Tenant::factory()->create();
         $initialCount = Tenant::count();
 
-        $response = $this->getJson('/api/v1/ping', ['X-Tenant-UUID' => $tenant->uuid]);
+        $response = $this->getJson('/api/v1/tenant/me', ['X-Tenant-UUID' => $tenant->uuid]);
 
         $response->assertStatus(200)
-            ->assertExactJson(['ok' => true]);
+            ->assertJsonPath('uuid', $tenant->uuid);
 
         $this->assertSame($initialCount, Tenant::count());
     }
