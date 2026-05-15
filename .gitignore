@@ -25,3 +25,13 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# oh-my-claudecode runtime (keep .omc/plans/ tracked)
+.omc/sessions/
+.omc/state/
+.omc/logs/
+.omc/drafts/
+.omc/research/
+.omc/notepad.md
+.omc/project-memory.json
+mobile/.omc/
