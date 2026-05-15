@@ -5,9 +5,16 @@ import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 
 import { runMigrations } from '@/src/db';
+import { logWarn } from '@/src/log';
+import { configureNotificationHandler, requestPermissions } from '@/src/notifications';
+import { useSyncStore } from '@/src/stores/syncStore';
 import { useTenantStore } from '@/src/stores/tenantStore';
 import { useThemeStore } from '@/src/stores/themeStore';
+import { registerSyncTriggers } from '@/src/sync/triggers';
 import { useTheme } from '@/src/theme/useTheme';
+
+// Configure notification foreground handler before any UI mounts.
+configureNotificationHandler();
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -23,6 +30,7 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const bootstrapTenant = useTenantStore((s) => s.bootstrap);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
+  const hydrateSync = useSyncStore((s) => s.hydrate);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,9 +38,9 @@ export default function RootLayout() {
     (async () => {
       try {
         await runMigrations();
-        await Promise.all([hydrateTheme(), bootstrapTenant()]);
+        await Promise.all([hydrateTheme(), bootstrapTenant(), hydrateSync()]);
       } catch (err) {
-        console.warn('Startup error', err);
+        logWarn('Startup error', err);
       }
       if (!cancelled) {
         setReady(true);
@@ -42,14 +50,22 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrapTenant, hydrateTheme]);
+  }, [bootstrapTenant, hydrateTheme, hydrateSync]);
 
   useEffect(() => {
-    if (ready) {
-      SplashScreen.hideAsync().catch(() => {
-        // Best-effort.
-      });
+    if (!ready) {
+      return;
     }
+    SplashScreen.hideAsync().catch(() => {
+      // Best-effort.
+    });
+
+    // Wire sync triggers + notification permissions once the app is hydrated.
+    void requestPermissions();
+    const unregister = registerSyncTriggers();
+    return () => {
+      unregister();
+    };
   }, [ready]);
 
   if (!ready) {
@@ -64,8 +80,13 @@ function RootLayoutNav() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.bg },
+        }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings" />
       </Stack>
     </GestureHandlerRootView>
   );
