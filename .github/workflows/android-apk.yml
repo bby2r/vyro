@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Run mobile tests
+        run: npm test -- --ci
+
+      - name: Expo prebuild (generate android/)
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Gradle assembleRelease
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyro-${{ github.sha }}-apk
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Vyro queue worker (macOS launchd template).
+
+  Install:
+    1. Edit the two REPLACE_ME paths below to match your machine.
+    2. Copy to ~/Library/LaunchAgents/com.vyro.queue.plist
+    3. launchctl load  ~/Library/LaunchAgents/com.vyro.queue.plist
+    4. launchctl start com.vyro.queue
+
+  Status:    launchctl list | grep vyro
+  Logs:      tail -f /tmp/vyro-queue.log /tmp/vyro-queue.err.log
+  Uninstall: launchctl unload ~/Library/LaunchAgents/com.vyro.queue.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.vyro.queue</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/REPLACE_ME/php</string>
+        <string>/REPLACE_ME/path/to/vyro/artisan</string>
+        <string>queue:work</string>
+        <string>--tries=3</string>
+        <string>--timeout=300</string>
+        <string>--sleep=3</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/REPLACE_ME/path/to/vyro</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/vyro-queue.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/vyro-queue.err.log</string>
+</dict>
+</plist>

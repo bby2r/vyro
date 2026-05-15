@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Vyro scheduler (macOS launchd template).
+  Runs the Laravel scheduler every minute; the scheduler internally fires
+  CategorizeEntriesJob twice daily at 09:00 and 21:00.
+
+  Install (same flow as com.vyro.queue.plist):
+    1. Edit the two REPLACE_ME paths below.
+    2. Copy to ~/Library/LaunchAgents/com.vyro.schedule.plist
+    3. launchctl load ~/Library/LaunchAgents/com.vyro.schedule.plist
+
+  This uses schedule:run on a 60-second StartInterval instead of schedule:work
+  so that a missed minute (e.g. PC asleep) is silently skipped rather than
+  the process exiting.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.vyro.schedule</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/REPLACE_ME/php</string>
+        <string>/REPLACE_ME/path/to/vyro/artisan</string>
+        <string>schedule:run</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/REPLACE_ME/path/to/vyro</string>
+
+    <key>StartInterval</key>
+    <integer>60</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/vyro-schedule.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/vyro-schedule.err.log</string>
+</dict>
+</plist>
