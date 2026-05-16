@@ -1,122 +1,108 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Stack } from 'expo-router';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import 'react-native-reanimated';
 
-import { runMigrations } from '@/src/db';
-import { logWarn } from '@/src/log';
-import { configureNotificationHandler, requestPermissions } from '@/src/notifications';
-import { useSyncStore } from '@/src/stores/syncStore';
-import { useTenantStore } from '@/src/stores/tenantStore';
-import { useThemeStore } from '@/src/stores/themeStore';
-import { registerSyncTriggers } from '@/src/sync/triggers';
-import { useTheme } from '@/src/theme/useTheme';
+// Dismiss splash immediately so React UI is always visible regardless
+// of bootstrap state.
+SplashScreen.hideAsync().catch(() => {});
 
-export { ErrorBoundary } from 'expo-router';
+type Step = { label: string; ok: boolean; error?: string };
 
-export const unstable_settings = {
-  initialRouteName: '(tabs)',
-};
-
-SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const BOOTSTRAP_TIMEOUT_MS = 5000;
-
-export default function RootLayout() {
-  const [ready, setReady] = useState(false);
-  const [bootstrapStatus, setBootstrapStatus] = useState('starting');
-  const bootstrapTenant = useTenantStore((s) => s.bootstrap);
-  const hydrateTheme = useThemeStore((s) => s.hydrate);
-  const hydrateSync = useSyncStore((s) => s.hydrate);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    // Side effects intentionally deferred from module top-level: in release
-    // builds at module init some native modules aren't ready yet, which
-    // caused the bundle to hang silently before any React render.
-    try {
-      configureNotificationHandler();
-    } catch (err) {
-      logWarn('notification handler setup failed', err);
-    }
-
-    const timeoutId = setTimeout(() => {
-      if (!cancelled) {
-        setBootstrapStatus('timed out, continuing');
-        setReady(true);
-      }
-    }, BOOTSTRAP_TIMEOUT_MS);
-
-    (async () => {
-      try {
-        setBootstrapStatus('migrations');
-        await runMigrations();
-        setBootstrapStatus('hydrating stores');
-        await Promise.all([hydrateTheme(), bootstrapTenant(), hydrateSync()]);
-        setBootstrapStatus('ready');
-      } catch (err) {
-        logWarn('Startup error', err);
-        setBootstrapStatus(`error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-      if (!cancelled) {
-        clearTimeout(timeoutId);
-        setReady(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [bootstrapTenant, hydrateTheme, hydrateSync]);
-
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    SplashScreen.hideAsync().catch(() => {});
-
-    void requestPermissions();
-    const unregister = registerSyncTriggers();
-    return () => {
-      unregister();
-    };
-  }, [ready]);
-
-  if (!ready) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#0d1117',
-        }}>
-        <ActivityIndicator color="#58a6ff" size="large" />
-        <Text style={{ color: '#8b949e', marginTop: 12 }}>{bootstrapStatus}</Text>
-      </View>
-    );
+async function step<T>(
+  label: string,
+  fn: () => Promise<T> | T,
+  steps: Step[],
+  setSteps: (s: Step[]) => void,
+): Promise<T | undefined> {
+  // eslint-disable-next-line no-console
+  console.log('[vyro-diag] step start:', label);
+  try {
+    const result = await fn();
+    steps.push({ label, ok: true });
+    setSteps([...steps]);
+    // eslint-disable-next-line no-console
+    console.log('[vyro-diag] step ok:', label);
+    return result;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    steps.push({ label, ok: false, error: msg });
+    setSteps([...steps]);
+    // eslint-disable-next-line no-console
+    console.log('[vyro-diag] step FAILED:', label, msg);
+    return undefined;
   }
-
-  return <RootLayoutNav />;
 }
 
-function RootLayoutNav() {
-  const theme = useTheme();
+export default function RootLayout() {
+  const [steps, setSteps] = useState<Step[]>([]);
+
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+    (async () => {
+      const s: Step[] = [];
+      await step('import react-native-reanimated', () => import('react-native-reanimated'), s, setSteps);
+      await step('import react-native-gesture-handler', () => import('react-native-gesture-handler'), s, setSteps);
+      await step('import expo-router', () => import('expo-router'), s, setSteps);
+      const dbMod = await step('import @/src/db', () => import('@/src/db'), s, setSteps);
+      if (dbMod) {
+        await step('runMigrations()', () => dbMod.runMigrations(), s, setSteps);
+      }
+      const themeMod = await step('import themeStore', () => import('@/src/stores/themeStore'), s, setSteps);
+      const tenantMod = await step('import tenantStore', () => import('@/src/stores/tenantStore'), s, setSteps);
+      const syncMod = await step('import syncStore', () => import('@/src/stores/syncStore'), s, setSteps);
+      if (themeMod) {
+        await step('hydrate theme', () => themeMod.useThemeStore.getState().hydrate(), s, setSteps);
+      }
+      if (tenantMod) {
+        await step('bootstrap tenant', () => tenantMod.useTenantStore.getState().bootstrap(), s, setSteps);
+      }
+      if (syncMod) {
+        await step('hydrate sync', () => syncMod.useSyncStore.getState().hydrate(), s, setSteps);
+      }
+      const notifMod = await step('import notifications', () => import('@/src/notifications'), s, setSteps);
+      if (notifMod) {
+        await step('configureNotificationHandler', () => notifMod.configureNotificationHandler(), s, setSteps);
+      }
+      const trigMod = await step('import sync/triggers', () => import('@/src/sync/triggers'), s, setSteps);
+      if (trigMod) {
+        await step('registerSyncTriggers', () => trigMod.registerSyncTriggers(), s, setSteps);
+      }
+      s.push({ label: 'DONE', ok: true });
+      setSteps([...s]);
+    })();
+  }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: theme.bg },
-        }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="settings" />
-      </Stack>
-    </GestureHandlerRootView>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#0d1117',
+        paddingTop: 60,
+        paddingHorizontal: 20,
+      }}>
+      <Text style={{ color: '#58a6ff', fontSize: 22, fontWeight: 'bold', marginBottom: 16 }}>
+        vyro diagnostic
+      </Text>
+      <ScrollView style={{ flex: 1 }}>
+        {steps.map((st, i) => (
+          <Text
+            key={i}
+            style={{
+              color: st.ok ? '#3fb950' : '#f85149',
+              marginBottom: 4,
+              fontFamily: 'monospace',
+            }}>
+            {st.ok ? '✓' : '✗'} {st.label}
+            {st.error ? ` — ${st.error}` : ''}
+          </Text>
+        ))}
+        {steps.length > 0 && steps[steps.length - 1].label !== 'DONE' && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <ActivityIndicator color="#58a6ff" size="small" />
+            <Text style={{ color: '#8b949e', marginLeft: 8 }}>running next step...</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
