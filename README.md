@@ -122,8 +122,10 @@ cd android
 `.github/workflows/android-apk.yml` runs on every push to `master` and on
 manual `workflow_dispatch`. It runs the mobile tests, prebuilds the Expo
 project, runs `./gradlew assembleRelease`, and uploads the APK as an artifact
-named `vyro-<sha>-apk`. Download it from the workflow run summary and
-sideload onto your Android device.
+named `vyro-v<version>-build<run_number>-<short_sha>` (e.g.
+`vyro-v1.0.0-build7-9a24f66`). Download it from the workflow run summary and
+sideload onto your Android device. The APK file inside the zip carries the
+same name.
 
 The APK is **debug-signed** by default — fine for personal sideloading. To
 ship a release-signed build later: generate a keystore, base64-encode it,
