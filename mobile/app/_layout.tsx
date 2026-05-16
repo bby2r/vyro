@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,8 +27,11 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden in some test environments.
 });
 
+const BOOTSTRAP_TIMEOUT_MS = 5000;
+
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const [bootstrapStatus, setBootstrapStatus] = useState('starting');
   const bootstrapTenant = useTenantStore((s) => s.bootstrap);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
   const hydrateSync = useSyncStore((s) => s.hydrate);
@@ -35,20 +39,33 @@ export default function RootLayout() {
   useEffect(() => {
     let cancelled = false;
 
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setBootstrapStatus('timed out, continuing');
+        setReady(true);
+      }
+    }, BOOTSTRAP_TIMEOUT_MS);
+
     (async () => {
       try {
+        setBootstrapStatus('migrations');
         await runMigrations();
+        setBootstrapStatus('hydrating stores');
         await Promise.all([hydrateTheme(), bootstrapTenant(), hydrateSync()]);
+        setBootstrapStatus('ready');
       } catch (err) {
         logWarn('Startup error', err);
+        setBootstrapStatus(`error: ${err instanceof Error ? err.message : String(err)}`);
       }
       if (!cancelled) {
+        clearTimeout(timeoutId);
         setReady(true);
       }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [bootstrapTenant, hydrateTheme, hydrateSync]);
 
@@ -69,7 +86,18 @@ export default function RootLayout() {
   }, [ready]);
 
   if (!ready) {
-    return null;
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0d1117',
+        }}>
+        <ActivityIndicator color="#58a6ff" size="large" />
+        <Text style={{ color: '#8b949e', marginTop: 12 }}>{bootstrapStatus}</Text>
+      </View>
+    );
   }
 
   return <RootLayoutNav />;
