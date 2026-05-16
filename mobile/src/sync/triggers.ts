@@ -9,9 +9,13 @@ import { runOnce } from './syncService';
 const FOREGROUND_INTERVAL_MS = 30_000;
 export const BACKGROUND_SYNC_TASK = 'vyro-background-sync';
 
-// Register the task at module load (this is required for TaskManager to
-// resolve the task on cold-start boots).
-if (!TaskManager.isTaskDefined(BACKGROUND_SYNC_TASK)) {
+let taskDefined = false;
+function ensureTaskDefined(): void {
+  if (taskDefined || TaskManager.isTaskDefined(BACKGROUND_SYNC_TASK)) {
+    taskDefined = true;
+    return;
+  }
+  taskDefined = true;
   TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
     try {
       await runOnce();
@@ -32,6 +36,12 @@ export function registerSyncTriggers(): Cleanup {
     return () => {};
   }
   registered = true;
+
+  try {
+    ensureTaskDefined();
+  } catch (err) {
+    logWarn('defineTask failed', err);
+  }
 
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let appStateSub: NativeEventSubscription | null = null;
