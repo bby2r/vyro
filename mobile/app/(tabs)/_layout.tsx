@@ -1,26 +1,9 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import { Text, View } from 'react-native';
 
-import { useTheme } from '@/src/theme/useTheme';
-
-export default function TabLayout() {
-  const theme = useTheme();
-
+export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.bgAlt },
-        headerTintColor: theme.text,
-        tabBarStyle: {
-          backgroundColor: theme.bgAlt,
-          borderTopColor: theme.border,
-        },
-        tabBarActiveTintColor: theme.accent,
-        tabBarInactiveTintColor: theme.textMuted,
-      }}>
-      <Tabs.Screen name="expenses" options={{ title: 'Expenses' }} />
-      <Tabs.Screen name="todos" options={{ title: 'Todos' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
-    </Tabs>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117' }}>
+      <Text style={{ color: '#58a6ff', fontSize: 24, fontWeight: 'bold' }}>(tabs) entered</Text>
+    </View>
   );
 }
