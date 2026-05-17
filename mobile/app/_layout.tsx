@@ -1,9 +1,20 @@
-import { Slot } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import 'react-native-reanimated';
 
-// Dismiss splash immediately so React UI is always visible.
 SplashScreen.hideAsync().catch(() => {});
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function RootLayout() {
-  return <Slot />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0d1117' }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+      </Stack>
+    </GestureHandlerRootView>
+  );
 }
