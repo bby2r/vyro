@@ -1,7 +1,10 @@
 import * as SQLite from 'expo-sqlite';
+import * as SecureStore from 'expo-secure-store';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 
 import * as schema from './schema';
+
+const USD_TO_KGS_MIGRATION_KEY = 'migration_usdToKgs_v1_done';
 
 /**
  * DB bootstrap. We open vyro.db once and reuse the handle for the app lifetime.
@@ -52,4 +55,17 @@ export async function runMigrations(): Promise<void> {
     CREATE INDEX IF NOT EXISTS todos_updated_at_idx ON todos(updated_at);
     CREATE INDEX IF NOT EXISTS todos_due_at_idx ON todos(due_at);
   `);
+
+  // One-time relabel: existing rows we created with the 'USD' default actually
+  // mean Kyrgyz som for this user. Run once per install and remember via
+  // SecureStore so we don't clobber legitimate USD entries on later runs.
+  try {
+    const done = await SecureStore.getItemAsync(USD_TO_KGS_MIGRATION_KEY);
+    if (done !== '1') {
+      await sqlite.execAsync(`UPDATE expenses SET currency = 'KGS' WHERE currency = 'USD';`);
+      await SecureStore.setItemAsync(USD_TO_KGS_MIGRATION_KEY, '1');
+    }
+  } catch {
+    // SecureStore may be unavailable in tests; harmless to retry next launch.
+  }
 }

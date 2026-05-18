@@ -130,65 +130,68 @@ export default function TodosFormView() {
   }, [dueAt, title, titleShake]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <Animated.View style={{ transform: [{ translateX: titleShake.translateX }] }}>
-        <Input
-          ref={titleRef}
-          value={title}
-          onChangeText={(t) => {
-            setTitle(t);
-            if (titleInvalid && t.trim()) {
-              setTitleInvalid(false);
-            }
-          }}
-          placeholder="Todo title"
-          invalid={titleInvalid}
-          returnKeyType="done"
-          onSubmitEditing={onSubmit}
-        />
-      </Animated.View>
+    <View style={[styles.outer, { backgroundColor: theme.bg }]}>
+      <View style={styles.inner}>
+        <Animated.View style={{ transform: [{ translateX: titleShake.translateX }] }}>
+          <Input
+            ref={titleRef}
+            value={title}
+            onChangeText={(t) => {
+              setTitle(t);
+              if (titleInvalid && t.trim()) {
+                setTitleInvalid(false);
+              }
+            }}
+            placeholder="Todo title"
+            invalid={titleInvalid}
+            returnKeyType="done"
+            onSubmitEditing={onSubmit}
+          />
+        </Animated.View>
 
-      <View style={styles.dueRow}>
-        <Text style={{ color: theme.text, flex: 1 }}>
-          {dueAt ? `Due: ${formatDateShort(dueAt)}` : 'No due date'}
-        </Text>
-        {dueAt ? (
+        <View style={styles.dueRow}>
+          <Text style={{ color: theme.text, flex: 1 }}>
+            {dueAt ? `Due: ${formatDateShort(dueAt)}` : 'No due date'}
+          </Text>
+          {dueAt ? (
+            <Pressable
+              onPress={() => setDueAt(null)}
+              style={({ pressed }) => [
+                styles.smallBtn,
+                { borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
+              ]}>
+              <Text style={{ color: theme.text }}>Clear</Text>
+            </Pressable>
+          ) : null}
           <Pressable
-            onPress={() => setDueAt(null)}
+            onPress={() => setShowPicker('date')}
             style={({ pressed }) => [
               styles.smallBtn,
               { borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
             ]}>
-            <Text style={{ color: theme.text }}>Clear</Text>
+            <Text style={{ color: theme.accent }}>{dueAt ? 'Change' : 'Set due date'}</Text>
           </Pressable>
+        </View>
+
+        {showPicker ? (
+          <DateTimePicker
+            value={dueAt ?? new Date()}
+            mode={showPicker}
+            is24Hour
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onPickerChange}
+          />
         ) : null}
-        <Pressable
-          onPress={() => setShowPicker('date')}
-          style={({ pressed }) => [
-            styles.smallBtn,
-            { borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
-          ]}>
-          <Text style={{ color: theme.accent }}>{dueAt ? 'Change' : 'Set due date'}</Text>
-        </Pressable>
+
+        <Button title="Add todo" onPress={onSubmit} />
       </View>
-
-      {showPicker ? (
-        <DateTimePicker
-          value={dueAt ?? new Date()}
-          mode={showPicker}
-          is24Hour
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onPickerChange}
-        />
-      ) : null}
-
-      <Button title="Add todo" onPress={onSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
+  outer: { flex: 1, justifyContent: 'center' },
+  inner: { paddingHorizontal: 16, gap: 14 },
   dueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   smallBtn: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1 },
 });

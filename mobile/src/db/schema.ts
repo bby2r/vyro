@@ -8,7 +8,7 @@ export const expenses = sqliteTable('expenses', {
   client_id: text('client_id').primaryKey(),
   description: text('description').notNull(),
   amount_cents: integer('amount_cents').notNull(),
-  currency: text('currency').default('USD'),
+  currency: text('currency').default('KGS'),
   category: text('category'),
   labels: text('labels'),
   occurred_at: integer('occurred_at', { mode: 'timestamp' }).notNull(),

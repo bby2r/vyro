@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 
 import { db } from './index';
 import { expenses, todos, type Expense, type Todo } from './schema';
@@ -32,7 +32,7 @@ export async function listExpensesInWindow(from: Date, to: Date): Promise<Expens
       and(
         isNull(expenses.deleted_at),
         gte(expenses.occurred_at, from),
-        sql`${expenses.occurred_at} < ${to}`,
+        lt(expenses.occurred_at, to),
       ),
     )
     .orderBy(asc(expenses.occurred_at));

@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { runMigrations } from '@/src/db';
 import { logWarn } from '@/src/log';
 import { configureNotificationHandler, requestPermissions } from '@/src/notifications';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useSyncStore } from '@/src/stores/syncStore';
 import { useTenantStore } from '@/src/stores/tenantStore';
 import { useThemeStore } from '@/src/stores/themeStore';
@@ -30,6 +31,7 @@ export default function RootLayout() {
   const bootstrapTenant = useTenantStore((s) => s.bootstrap);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
   const hydrateSync = useSyncStore((s) => s.hydrate);
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +54,7 @@ export default function RootLayout() {
         setBootstrapStatus('migrations');
         await runMigrations();
         setBootstrapStatus('hydrating stores');
-        await Promise.all([hydrateTheme(), bootstrapTenant(), hydrateSync()]);
+        await Promise.all([hydrateTheme(), bootstrapTenant(), hydrateSync(), hydrateSettings()]);
         setBootstrapStatus('ready');
       } catch (err) {
         logWarn('Startup error', err);
@@ -68,7 +70,7 @@ export default function RootLayout() {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [bootstrapTenant, hydrateTheme, hydrateSync]);
+  }, [bootstrapTenant, hydrateTheme, hydrateSync, hydrateSettings]);
 
   useEffect(() => {
     if (!ready) {

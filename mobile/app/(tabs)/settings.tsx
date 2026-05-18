@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -15,6 +16,7 @@ import { Card } from '@/src/components/Card';
 import { Input } from '@/src/components/Input';
 import { apiRequest } from '@/src/api/client';
 import { logWarn } from '@/src/log';
+import { SUPPORTED_CURRENCIES, useSettingsStore } from '@/src/stores/settingsStore';
 import { useSyncStore } from '@/src/stores/syncStore';
 import { useTenantStore } from '@/src/stores/tenantStore';
 import { useThemeStore } from '@/src/stores/themeStore';
@@ -39,6 +41,8 @@ export default function SettingsScreen() {
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const syncing = useSyncStore((s) => s.syncing);
   const lastError = useSyncStore((s) => s.lastError);
+  const defaultCurrency = useSettingsStore((s) => s.defaultCurrency);
+  const setDefaultCurrency = useSettingsStore((s) => s.setDefaultCurrency);
 
   const [urlInput, setUrlInput] = useState(backendUrl ?? '');
   const [urlInvalid, setUrlInvalid] = useState(false);
@@ -135,6 +139,34 @@ export default function SettingsScreen() {
       </Card>
 
       <Card>
+        <Text style={[styles.label, { color: theme.text }]}>Default currency</Text>
+        <View style={styles.currencyRow}>
+          {SUPPORTED_CURRENCIES.map((c) => {
+            const active = c === defaultCurrency;
+            return (
+              <Pressable
+                key={c}
+                onPress={() => {
+                  void setDefaultCurrency(c);
+                }}
+                style={({ pressed }) => [
+                  styles.currencyBtn,
+                  {
+                    backgroundColor: active ? theme.accent : theme.bgAlt,
+                    borderColor: active ? theme.accent : theme.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}>
+                <Text style={{ color: active ? '#0d1117' : theme.text, fontWeight: '600' }}>
+                  {c}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Card>
         <Text style={[styles.label, { color: theme.text }]}>Backend URL</Text>
         <Input
           value={urlInput}
@@ -227,5 +259,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginTop: 8,
+  },
+  currencyRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  currencyBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
   },
 });

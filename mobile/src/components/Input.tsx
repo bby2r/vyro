@@ -33,10 +33,11 @@ export const Input = forwardRef<TextInput, Props>(function Input(
 
 const styles = StyleSheet.create({
   input: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    minHeight: 56,
+    borderRadius: 10,
     borderWidth: 1,
-    fontSize: 15,
+    fontSize: 17,
   },
 });
