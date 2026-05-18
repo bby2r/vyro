@@ -118,50 +118,44 @@ export default function ExpenseFormView() {
           />
         </Animated.View>
 
-        <Animated.View style={{ transform: [{ translateX: amountShake.translateX }] }}>
-          <Input
-            ref={amountRef}
-            value={amount}
-            onChangeText={(t) => {
-              setAmount(t);
-              if (amountInvalid && parseAmountToCents(t) !== null) {
-                setAmountInvalid(false);
-              }
+        <Animated.View
+          style={[styles.amountRow, { transform: [{ translateX: amountShake.translateX }] }]}>
+          <Pressable
+            onPress={() => {
+              const idx = SUPPORTED_CURRENCIES.indexOf(currency);
+              const next = SUPPORTED_CURRENCIES[(idx + 1) % SUPPORTED_CURRENCIES.length];
+              setCurrency(next);
             }}
-            placeholder="Amount (e.g. 12.50)"
-            keyboardType="decimal-pad"
-            invalid={amountInvalid}
-            returnKeyType="done"
-            onSubmitEditing={onSubmit}
-          />
+            style={({ pressed }) => [
+              styles.currencyChip,
+              {
+                backgroundColor: theme.bgAlt,
+                borderColor: theme.border,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}>
+            <Text style={{ color: theme.accent, fontWeight: '700', fontSize: 15 }}>
+              {currency}
+            </Text>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Input
+              ref={amountRef}
+              value={amount}
+              onChangeText={(t) => {
+                setAmount(t);
+                if (amountInvalid && parseAmountToCents(t) !== null) {
+                  setAmountInvalid(false);
+                }
+              }}
+              placeholder="Amount (e.g. 12.50)"
+              keyboardType="decimal-pad"
+              invalid={amountInvalid}
+              returnKeyType="done"
+              onSubmitEditing={onSubmit}
+            />
+          </View>
         </Animated.View>
-
-        <View style={styles.currencyRow}>
-          {SUPPORTED_CURRENCIES.map((c) => {
-            const active = c === currency;
-            return (
-              <Pressable
-                key={c}
-                onPress={() => setCurrency(c)}
-                style={({ pressed }) => [
-                  styles.currencyBtn,
-                  {
-                    backgroundColor: active ? theme.accent : theme.bgAlt,
-                    borderColor: active ? theme.accent : theme.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                ]}>
-                <Text
-                  style={{
-                    color: active ? '#0d1117' : theme.text,
-                    fontWeight: '600',
-                  }}>
-                  {c}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
         <Button title="Add expense" onPress={onSubmit} />
       </View>
@@ -172,12 +166,13 @@ export default function ExpenseFormView() {
 const styles = StyleSheet.create({
   outer: { flex: 1, justifyContent: 'center' },
   inner: { paddingHorizontal: 16, gap: 14 },
-  currencyRow: { flexDirection: 'row', gap: 8 },
-  currencyBtn: {
-    flex: 1,
-    paddingVertical: 12,
+  amountRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
+  currencyChip: {
+    minWidth: 64,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    borderRadius: 8,
+    justifyContent: 'center',
+    borderRadius: 10,
     borderWidth: 1,
   },
 });
