@@ -1,10 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 
-export const unstable_settings = {
-  initialRouteName: 'expenses',
-};
-
 export default function TabLayout() {
   return (
     <Tabs
@@ -15,6 +11,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#58a6ff',
         tabBarInactiveTintColor: '#8b949e',
       }}>
+      <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="expenses" options={{ title: 'Expenses' }} />
       <Tabs.Screen name="todos" options={{ title: 'Todos' }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
