@@ -148,16 +148,19 @@ SQLite DB — no data loss.
 **Reinstall or new device** — Android wipes the app sandbox on uninstall. To
 preserve data:
 
-1. Before uninstalling: open the app → Settings → Export Tenant → save the QR
-   code (or note the UUID).
-2. On the new install: tap Import Tenant in Settings → scan the QR (or paste
-   the UUID) → app overwrites the local UUID and pulls all history from the
-   backend.
+1. Before uninstalling: open the app → Settings → **Export tenant** → tap
+   **Copy UUID** and paste it somewhere safe (password manager, notes).
+2. On the new install: Settings → **Import tenant** → paste the UUID → confirm.
+   The app overwrites the local UUID and pulls all history from the backend.
 
-If the user never exports the QR and the local DB is wiped, the data is
+If the user never copies the UUID and the local DB is wiped, the data is
 **unrecoverable** from the device, but everything that was synced to the
 backend is intact and can be restored by manually setting the UUID. The app
 shows a one-time warning banner in Settings until the user has exported.
+
+QR-code export and camera-based scan are deferred follow-ups (they depend on
+`react-native-qrcode-svg` and `expo-camera`, both of which had release-build
+issues on Expo SDK 54 + new architecture on the test device).
 
 ---
 
