@@ -3,7 +3,6 @@ import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, View } from 're
 import { useFocusEffect } from 'expo-router';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { eq } from 'drizzle-orm';
-import { Check, Pencil, Square, Trash2 } from 'lucide-react-native';
 
 import { Button } from '@/src/components/Button';
 import { IconButton } from '@/src/components/IconButton';
@@ -32,7 +31,7 @@ const TodoRow = React.memo(function TodoRow({ item, onToggleDone, onEdit, onDele
   return (
     <View style={[styles.row, { borderBottomColor: theme.border }]}>
       <IconButton
-        icon={done ? Check : Square}
+        name={done ? 'check-box' : 'check-box-outline-blank'}
         onPress={() => onToggleDone(item)}
         color={done ? theme.success : theme.textMuted}
         accessibilityLabel="Toggle done"
@@ -52,8 +51,8 @@ const TodoRow = React.memo(function TodoRow({ item, onToggleDone, onEdit, onDele
           </Text>
         ) : null}
       </View>
-      <IconButton icon={Pencil} onPress={() => onEdit(item)} accessibilityLabel="Edit todo" />
-      <IconButton icon={Trash2} onPress={() => onDelete(item)} accessibilityLabel="Delete todo" />
+      <IconButton name="edit" onPress={() => onEdit(item)} accessibilityLabel="Edit todo" />
+      <IconButton name="delete" onPress={() => onDelete(item)} accessibilityLabel="Delete todo" />
     </View>
   );
 });
@@ -64,7 +63,7 @@ type EditState = {
   due_at: Date | null;
 };
 
-export default function TodosList() {
+export default function TodosListView() {
   const theme = useTheme();
   const [rows, setRows] = useState<Todo[]>([]);
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -99,11 +98,7 @@ export default function TodosList() {
           updated_at: Date;
           synced_at: Date | null;
           notification_id?: string | null;
-        } = {
-          done: nextDone,
-          updated_at: now,
-          synced_at: null,
-        };
+        } = { done: nextDone, updated_at: now, synced_at: null };
         if (nextDone === 1 && t.notification_id) {
           await cancelTodoReminder(t.notification_id);
           update.notification_id = null;
@@ -246,12 +241,7 @@ export default function TodosList() {
       <FlatList
         data={rows}
         renderItem={({ item }) => (
-          <TodoRow
-            item={item}
-            onToggleDone={onToggleDone}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+          <TodoRow item={item} onToggleDone={onToggleDone} onEdit={onEdit} onDelete={onDelete} />
         )}
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
@@ -316,9 +306,7 @@ export default function TodosList() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   row: {
     height: ROW_HEIGHT,
     paddingHorizontal: 8,
@@ -327,54 +315,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
   },
-  rowMain: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  rowTitle: {
-    fontSize: 14,
-  },
-  rowDue: {
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  empty: {
-    paddingTop: 64,
-    alignItems: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  dueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  smallBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
-  },
+  rowMain: { flex: 1, flexDirection: 'column', justifyContent: 'center', gap: 2 },
+  rowTitle: { fontSize: 14 },
+  rowDue: { fontSize: 12, fontVariant: ['tabular-nums'] },
+  empty: { paddingTop: 64, alignItems: 'center' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
+  modal: { padding: 16, borderRadius: 12, borderWidth: 1, gap: 12 },
+  modalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  dueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  smallBtn: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1 },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 4 },
 });

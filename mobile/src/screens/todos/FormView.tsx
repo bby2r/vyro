@@ -26,7 +26,7 @@ function useShake() {
   return { translateX: anim, shake };
 }
 
-export default function TodoForm() {
+export default function TodosFormView() {
   const theme = useTheme();
   const [title, setTitle] = useState('');
   const [titleInvalid, setTitleInvalid] = useState(false);
@@ -53,7 +53,6 @@ export default function TodoForm() {
         return;
       }
       if (showPicker === 'date') {
-        // After date, pick time on Android (iOS shows datetime in one).
         const base = dueAt ?? new Date();
         const updated = new Date(picked);
         updated.setHours(base.getHours(), base.getMinutes(), 0, 0);
@@ -109,7 +108,6 @@ export default function TodoForm() {
         if (capturedDue && capturedDue.getTime() > Date.now()) {
           try {
             const id = await scheduleTodoReminder(trimmed, capturedDue);
-            // best-effort; ignore if update fails
             const { eq } = await import('drizzle-orm');
             await db
               .update(todos)
@@ -190,20 +188,7 @@ export default function TodoForm() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    gap: 12,
-  },
-  dueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  smallBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
+  container: { flex: 1, padding: 16, gap: 12 },
+  dueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  smallBtn: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1 },
 });

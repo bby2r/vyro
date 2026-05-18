@@ -24,7 +24,7 @@ function useShake() {
   return { translateX: anim, shake };
 }
 
-export default function ExpenseForm() {
+export default function ExpenseFormView() {
   const theme = useTheme();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -74,8 +74,6 @@ export default function ExpenseForm() {
       synced_at: null,
     };
 
-    // Fire-and-forget insert. We don't await because the DB call is fast
-    // and we want the form clearing UX to feel instant.
     db.insert(expenses)
       .values(row)
       .then(() => {

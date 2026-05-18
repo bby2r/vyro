@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, FlatList, Modal, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { eq } from 'drizzle-orm';
-import { Pencil, Trash2 } from 'lucide-react-native';
 
 import { Button } from '@/src/components/Button';
 import { IconButton } from '@/src/components/IconButton';
@@ -26,8 +25,7 @@ type RowProps = {
 const ExpenseRow = React.memo(function ExpenseRow({ item, onEdit, onDelete }: RowProps) {
   const theme = useTheme();
   return (
-    <View
-      style={[styles.row, { borderBottomColor: theme.border }]}>
+    <View style={[styles.row, { borderBottomColor: theme.border }]}>
       <View style={styles.rowMain}>
         <Text style={[styles.rowDate, { color: theme.textMuted }]}>
           {formatDateShort(item.created_at)}
@@ -39,8 +37,8 @@ const ExpenseRow = React.memo(function ExpenseRow({ item, onEdit, onDelete }: Ro
       <Text style={[styles.rowAmount, { color: theme.text }]}>
         {formatCurrencyCents(item.amount_cents, item.currency ?? 'USD')}
       </Text>
-      <IconButton icon={Pencil} onPress={() => onEdit(item)} accessibilityLabel="Edit expense" />
-      <IconButton icon={Trash2} onPress={() => onDelete(item)} accessibilityLabel="Delete expense" />
+      <IconButton name="edit" onPress={() => onEdit(item)} accessibilityLabel="Edit expense" />
+      <IconButton name="delete" onPress={() => onDelete(item)} accessibilityLabel="Delete expense" />
     </View>
   );
 });
@@ -51,7 +49,7 @@ type EditState = {
   amount: string;
 };
 
-export default function ExpensesList() {
+export default function ExpensesListView() {
   const theme = useTheme();
   const [rows, setRows] = useState<Expense[]>([]);
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -164,7 +162,7 @@ export default function ExpensesList() {
       />
 
       <Modal visible={!!editing} transparent animationType="fade" onRequestClose={() => setEditing(null)}>
-        <View style={[styles.modalBackdrop]}>
+        <View style={styles.modalBackdrop}>
           <View style={[styles.modal, { backgroundColor: theme.bgAlt, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Edit expense</Text>
             <Input
@@ -190,9 +188,7 @@ export default function ExpensesList() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   row: {
     height: ROW_HEIGHT,
     paddingHorizontal: 16,
@@ -201,49 +197,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
-  rowMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  rowDate: {
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  rowDesc: {
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  rowAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  empty: {
-    paddingTop: 64,
-    alignItems: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
-  },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  rowDate: { fontSize: 12, fontVariant: ['tabular-nums'] },
+  rowDesc: { fontSize: 14, flexShrink: 1 },
+  rowAmount: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  empty: { paddingTop: 64, alignItems: 'center' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
+  modal: { padding: 16, borderRadius: 12, borderWidth: 1, gap: 12 },
+  modalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 4 },
 });
