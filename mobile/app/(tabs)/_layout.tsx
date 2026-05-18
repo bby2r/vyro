@@ -1,6 +1,10 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 
+export const unstable_settings = {
+  initialRouteName: 'expenses',
+};
+
 export default function TabLayout() {
   return (
     <Tabs
